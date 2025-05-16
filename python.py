@@ -29,6 +29,50 @@ class Supplier(Person):
     def get_order_history(self):
         return self._order_history
 
+class InventoryItem:
+    """Represents an item in the inventory with stock management capabilities"""
+
+    def __init__(self, item_id, name, description, quantity, low_stock_threshold):
+        self._item_id = item_id
+        self._name = name
+        self._description = description
+        self._quantity = quantity
+        self._low_stock_threshold = low_stock_threshold
+
+    def receive_stock(self, amount):
+        """Add new stock to inventory"""
+        if amount > 0:
+            self._quantity += amount
+            print(f"Received {amount} units of '{self._name}'. New quantity: {self._quantity}")
+        else:
+            print("Invalid stock amount. Must be greater than 0.")
+
+    def reduce_stock(self, amount):
+        """Reduce stock when items are sold or used"""
+        if 0 < amount <= self._quantity:
+            self._quantity -= amount
+            print(f"Reduced {amount} units of '{self._name}'. Remaining quantity: {self._quantity}")
+        else:
+            print("Invalid reduction amount or insufficient stock.")
+
+    def get_stock_level(self):
+        """Return current stock quantity."""
+        return self._quantity
+
+    def is_low_stock(self):
+        """Check if stock is below the low stock threshold"""
+        return self._quantity <= self._low_stock_threshold
+
+    def get_item_details(self):
+        """Return item details"""
+        return {
+            "Item ID": self._item_id,
+            "Name": self._name,
+            "Description": self._description,
+            "Quantity": self._quantity,
+            "Low Stock Threshold": self._low_stock_threshold,
+            "Low Stock Alert": self.is_low_stock()
+        }
 
 if __name__ == "__main__":
     # Create a Supplier instance and test functionality
