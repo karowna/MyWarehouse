@@ -84,3 +84,27 @@ if __name__ == "__main__":
     print(f"Contact Email: {contact['email']}")
     print(f"Contact Phone: {contact['phone']}")
     print(f"Order History: {supplier.get_order_history()}")
+
+    # Create an InventoryItem instance and test functionality
+    item = InventoryItem("ITEM001", "BRICKS", "BUILD BUILD", 50, 10)
+    print(item.get_item_details())
+    item.receive_stock(20)
+    item.reduce_stock(15)
+    print(item.get_item_details())
+    item.reduce_stock(60)  # Attempt to reduce more than available
+    item.receive_stock(-5)  # Attempt to receive invalid stock
+    print(f"Is low stock: {item.is_low_stock()}")
+    item.reduce_stock(30)  # Reduce to check low stock
+    print(f"Is low stock: {item.is_low_stock()}")
+    item.receive_stock(5)  # Add stock to go above low stock threshold
+    print(f"Is low stock: {item.is_low_stock()}")
+    item.receive_stock(0)  # Attempt to receive zero stock
+    item.receive_stock(-10)  # Attempt to receive negative stock
+    item.reduce_stock(50)  # Reduce to zero
+    print(f"Final stock level: {item.get_stock_level()}")
+    
+    # Test low stock alert
+    if item.is_low_stock():
+        print(f"Alert: '{item._name}' is low on stock!")
+    else:
+        print(f"'{item._name}' has sufficient stock.")
