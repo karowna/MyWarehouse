@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 class Person:
     """Base class representing a person with contact details."""
     def __init__(self, name, contact_number, contact_email):
@@ -7,6 +9,7 @@ class Person:
 
     def get_contact_details(self):
         return {
+            "name": self._name,
             "phone": self._contact_number,
             "email": self._contact_email
         }
@@ -89,38 +92,81 @@ class InventoryItem:
             "Low Stock Alert": self.is_low_stock()
         }
 
-if __name__ == "__main__":
-    # Create a Supplier instance and test functionality
-    supplier = Supplier("John Doe", "+1234567890", "john@example.com", "SUP123")
-    supplier.add_order("Order001")
 
-    contact = supplier.get_contact_details()
-    print(f"Supplier: {supplier._name}")
-    print(f"Contact Email: {contact['email']}")
-    print(f"Contact Phone: {contact['phone']}")
-    print(f"Order History: {supplier.get_order_history()}")
+class Warehouse:
+    """Represents the warehouse that manages inventory and supplier interactions"""
+    def __init__(self):
+        self._inventory = {}
+        self._suppliers = {}
 
-    # Create an InventoryItem instance and test functionality
-    item = InventoryItem("ITEM001", "BRICKS", "BUILD BUILD", 50, 10)
-    print(item.get_item_details())
-    item.receive_stock(20)
-    item.reduce_stock(15)
-    print(item.get_item_details())
-    item.reduce_stock(60)  # Attempt to reduce more than available
-    item.receive_stock(-5)  # Attempt to receive invalid stock
-    print(f"Is low stock: {item.is_low_stock()}")
-    item.reduce_stock(30)  # Reduce to check low stock
-    print(f"Is low stock: {item.is_low_stock()}")
-    item.receive_stock(5)  # Add stock to go above low stock threshold
-    print(f"Is low stock: {item.is_low_stock()}")
-    item.receive_stock(0)  # Attempt to receive zero stock
-    item.receive_stock(-10)  # Attempt to receive negative stock
-    item.reduce_stock(50)  # Reduce to zero
-    print(f"Final stock level: {item.get_stock_level()}")
-    
-    # Test low stock alert
-    item.reduce_stock(25)
-    if item.is_low_stock():
-        print(f"Alert: '{item._name}' is low on stock!")
-    else:
-        print(f"'{item._name}' has sufficient stock.")
+    def add_supplier(self, supplier):
+        self._suppliers[supplier._supplier_id] = supplier
+
+    def update_supplier(self, supplier_id, contact_number, contact_email):
+        if supplier_id in self._suppliers:
+            self._suppliers[supplier_id].set_contact_details(contact_number, contact_email)
+
+    def delete_supplier(self, supplier_id):
+        if supplier_id in self._suppliers:
+            del self._suppliers[supplier_id]
+
+    def get_supplier(self, supplier_id):
+        return self._suppliers.get(supplier_id)
+
+    def add_inventory_item(self, item):
+        self._inventory[item._item_id] = item
+
+    def get_inventory_item(self, item_id):
+        return self._inventory.get(item_id)
+
+    def order_from_supplier(self, supplier_id, item_id, amount):
+        supplier = self.get_supplier(supplier_id)
+        if supplier:
+            item = self.get_inventory_item(item_id)
+            if item:
+                item.receive_stock(amount)
+                supplier.add_order(f"Order for {amount} units of {item._name}")
+                print(f"Ordered {amount} units of {item._name} from {supplier._name}")
+            else:
+                print("Item not found in inventory.")
+        else:
+            print("Supplier not found.")
+
+    def get_inventory(self):
+        return self._inventory
+
+    def place_customer_order(self, customer, item_id, amount):
+        item = self.get_inventory_item(item_id)
+        if item and item.get_stock_level() >= amount:
+            item.reduce_stock(amount)
+            order = Order(customer, item, amount)
+            customer.add_purchase(order)
+            print(f"Order placed for {amount} units of {item._name}")
+        else:
+            print("Insufficient stock or item not found.")
+
+    def view_purchase_history(self, customer):
+        return customer.get_purchase_history()
+
+
+class Order:
+    """Represents an order placed by a customer"""
+    def __init__(self, customer, item, amount):
+        self._customer = customer
+        self._item = item
+        self._amount = amount
+        self._status = "processing"
+        self._timestamp = datetime.now()
+
+    def update_status(self):
+        elapsed_time = datetime.now() - self._timestamp
+        if elapsed_time > timedelta(minutes=3):
+            self._status = "delivered"
+        elif elapsed_time > timedelta(minutes=2):
+            self._status = "dispatched"
+        elif elapsed_time > timedelta(minutes=1):
+            self._status = "processed"
+
+    def get_status(self):
+        self.update_status()
+        return self._status
