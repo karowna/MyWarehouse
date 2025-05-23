@@ -1,4 +1,4 @@
-from inventory_classes import Person, Supplier, Customer, InventoryItem, Warehouse, Order
+from warehouse_classes import Person, Supplier, Customer, InventoryItem, Warehouse, Order
 import time
 
 def main_menu():
@@ -23,19 +23,43 @@ def main_menu():
             print("Invalid choice. Try again.")
 
 def customer_login(warehouse):
-    name = input("Enter your name: ")
-    contact_number = input("Enter your contact number: ")
-    contact_email = input("Enter your contact email: ")
-    customer_id = input("Enter your customer ID: ")
+    while True:
+        print("\n--- Customer Login ---")
+        print("1. Sign In")
+        print("2. Sign Up")
+        print("0. Back to Main Menu")
 
-    customer = Customer(name, contact_number, contact_email, customer_id)
+        choice = input("Choose an option: ")
 
+        if choice == "1":
+            customer_id = input("Enter your customer ID: ")
+            customer = warehouse.get_customer(customer_id)
+            if customer:
+                customer_menu(warehouse, customer)
+            else:
+                print("Customer not found. Please sign up.")
+        elif choice == "2":
+            name = input("Enter your name: ")
+            contact_number = input("Enter your contact number: ")
+            contact_email = input("Enter your contact email: ")
+            customer_id = input("Enter your customer ID: ")
+
+            customer = Customer(name, contact_number, contact_email, customer_id)
+            warehouse.add_customer(customer)
+            print("Customer registered successfully.")
+            customer_menu(warehouse, customer)
+        elif choice == "0":
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+def customer_menu(warehouse, customer):
     while True:
         print("\n--- Customer Menu ---")
         print("1. View Inventory")
         print("2. Place Order")
         print("3. View Order History")
-        print("4. Back to Main Menu")
+        print("0. Back to Customer Login")
 
         choice = input("Choose an option: ")
 
@@ -45,7 +69,7 @@ def customer_login(warehouse):
             place_order(warehouse, customer)
         elif choice == "3":
             view_order_history(customer)
-        elif choice == "4":
+        elif choice == "0":
             break
         else:
             print("Invalid choice. Try again.")
@@ -55,7 +79,8 @@ def admin_login(warehouse):
         print("\n--- Admin Menu ---")
         print("1. Manage Suppliers")
         print("2. Manage Warehouse Stock")
-        print("3. Back to Main Menu")
+        print("3. View Warehouse Balance")
+        print("4. Back to Main Menu")
 
         choice = input("Choose an option: ")
 
@@ -64,6 +89,8 @@ def admin_login(warehouse):
         elif choice == "2":
             manage_warehouse_stock(warehouse)
         elif choice == "3":
+            print(f"Warehouse Balance: £{warehouse.balance:.2f}")
+        elif choice == "4":
             break
         else:
             print("Invalid choice. Try again.")
@@ -75,7 +102,8 @@ def manage_suppliers(warehouse):
         print("2. Update Supplier")
         print("3. Delete Supplier")
         print("4. View Supplier Order History")
-        print("5. Back to Admin Menu")
+        print("5. Add Item to Supplier")
+        print("6. Back to Admin Menu")
 
         choice = input("Choose an option: ")
 
@@ -88,6 +116,8 @@ def manage_suppliers(warehouse):
         elif choice == "4":
             view_supplier_order_history(warehouse)
         elif choice == "5":
+            add_item_to_supplier(warehouse)
+        elif choice == "6":
             break
         else:
             print("Invalid choice. Try again.")
@@ -142,9 +172,23 @@ def view_supplier_order_history(warehouse):
     supplier = warehouse.get_supplier(supplier_id)
 
     if supplier:
-        print(f"Order History for {supplier.get_contact_details()['name']}:")
-        for order in supplier.get_order_history():
+        print(f"Order History for {supplier.name}:")
+        for order in supplier.order_history:
             print(order)
+    else:
+        print("Supplier not found.")
+
+def add_item_to_supplier(warehouse):
+    supplier_id = input("Enter supplier ID: ")
+    supplier = warehouse.get_supplier(supplier_id)
+    if supplier:
+        item_id = input("Enter item ID: ")
+        name = input("Enter item name: ")
+        description = input("Enter item description: ")
+        price = float(input("Enter item price (£/per): "))
+        item = InventoryItem(item_id, name, description, price)
+        supplier.add_inventory_item(item)
+        print("Item added to supplier inventory.")
     else:
         print("Supplier not found.")
 
@@ -168,7 +212,7 @@ def order_from_supplier(warehouse):
 
 def view_inventory(warehouse):
     print("\n--- Inventory ---")
-    for item_id, item in warehouse.get_inventory().items():
+    for item_id, item in warehouse.inventory.items():
         details = item.get_item_details()
         print(f"Item ID: {details['Item ID']}, Name: {details['Name']}, Quantity: {details['Quantity']}, Low Stock Alert: {details['Low Stock Alert']}")
 
@@ -180,9 +224,8 @@ def place_order(warehouse, customer):
 
 def view_order_history(customer):
     print("\n--- Order History ---")
-    for order in customer.get_purchase_history():
-        print(f"Item: {order._item._name}, Amount: {order._amount}, Status: {order.get_status()}")
+    for order in customer.purchase_history:
+        print(f"Item: {order.item.name}, Amount: {order.amount}, Status: {order.status}")
 
 if __name__ == "__main__":
     main_menu()
-

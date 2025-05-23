@@ -6,13 +6,26 @@ class Person:
         self._name = name
         self._contact_number = contact_number
         self._contact_email = contact_email
+        self._order_history = []
 
-    def get_contact_details(self):
-        return {
-            "name": self._name,
-            "phone": self._contact_number,
-            "email": self._contact_email
-        }
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def contact_number(self):
+        return self._contact_number
+
+    @property
+    def contact_email(self):
+        return self._contact_email
+
+    @property
+    def order_history(self):
+        return self._order_history
+
+    def add_order(self, order):
+        self._order_history.append(order)
 
     def set_contact_details(self, contact_number, contact_email):
         self._contact_number = contact_number
@@ -24,13 +37,18 @@ class Supplier(Person):
     def __init__(self, name, contact_number, contact_email, supplier_id):
         super().__init__(name, contact_number, contact_email)
         self._supplier_id = supplier_id
-        self._order_history = []
+        self._inventory = {}
 
-    def add_order(self, order):
-        self._order_history.append(order)
+    @property
+    def supplier_id(self):
+        return self._supplier_id
 
-    def get_order_history(self):
-        return self._order_history
+    @property
+    def inventory(self):
+        return self._inventory
+
+    def add_inventory_item(self, item):
+        self._inventory[item.item_id] = item
 
 
 class Customer(Person):
@@ -39,23 +57,65 @@ class Customer(Person):
         super().__init__(name, contact_number, contact_email)
         self._customer_id = customer_id
         self._purchase_history = []
+        self._balance = 0.0
+
+    @property
+    def customer_id(self):
+        return self._customer_id
+
+    @property
+    def purchase_history(self):
+        return self._purchase_history
+
+    @property
+    def balance(self):
+        return self._balance
+
+    def deduct_balance(self, amount):
+        self._balance -= amount
 
     def add_purchase(self, purchase):
         self._purchase_history.append(purchase)
-
-    def get_purchase_history(self):
-        return self._purchase_history
 
 
 class InventoryItem:
     """Represents an item in the inventory with stock management capabilities"""
 
-    def __init__(self, item_id, name, description, quantity, low_stock_threshold):
+    def __init__(self, item_id, name, description, price, quantity=0, low_stock_threshold=None):
         self._item_id = item_id
         self._name = name
         self._description = description
+        self._price = price
         self._quantity = quantity
         self._low_stock_threshold = low_stock_threshold
+
+    @property
+    def item_id(self):
+        return self._item_id
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def description(self):
+        return self._description
+
+    @property
+    def price(self):
+        return self._price
+
+    @price.setter
+    def price(self, value):
+        self._price = value
+
+    @property
+    def quantity(self):
+        return self._quantity
+
+    @property
+    def low_stock_threshold(self):
+        return self._low_stock_threshold
 
     def receive_stock(self, amount):
         """Add new stock to inventory"""
@@ -73,13 +133,11 @@ class InventoryItem:
         else:
             print("Invalid reduction amount or insufficient stock.")
 
-    def get_stock_level(self):
-        """Return current stock quantity."""
-        return self._quantity
-
     def is_low_stock(self):
         """Check if stock is below the low stock threshold"""
-        return self._quantity <= self._low_stock_threshold
+        if self._low_stock_threshold is not None:
+            return self._quantity <= self._low_stock_threshold
+        return False
 
     def get_item_details(self):
         """Return item details"""
@@ -87,6 +145,7 @@ class InventoryItem:
             "Item ID": self._item_id,
             "Name": self._name,
             "Description": self._description,
+            "Price": self._price,
             "Quantity": self._quantity,
             "Low Stock Threshold": self._low_stock_threshold,
             "Low Stock Alert": self.is_low_stock()
@@ -98,9 +157,30 @@ class Warehouse:
     def __init__(self):
         self._inventory = {}
         self._suppliers = {}
+        self._customers = {}
+        self._balance = 0.0
+
+    @property
+    def inventory(self):
+        return self._inventory
+
+    @property
+    def suppliers(self):
+        return self._suppliers
+
+    @property
+    def customers(self):
+        return self._customers
+
+    @property
+    def balance(self):
+        return self._balance
+
+    def deduct_balance(self, amount):
+        self._balance -= amount
 
     def add_supplier(self, supplier):
-        self._suppliers[supplier._supplier_id] = supplier
+        self._suppliers[supplier.supplier_id] = supplier
 
     def update_supplier(self, supplier_id, contact_number, contact_email):
         if supplier_id in self._suppliers:
@@ -113,40 +193,40 @@ class Warehouse:
     def get_supplier(self, supplier_id):
         return self._suppliers.get(supplier_id)
 
-    def add_inventory_item(self, item):
-        self._inventory[item._item_id] = item
+    def add_customer(self, customer):
+        self._customers[customer.customer_id] = customer
 
-    def get_inventory_item(self, item_id):
-        return self._inventory.get(item_id)
+    def get_customer(self, customer_id):
+        return self._customers.get(customer_id)
 
     def order_from_supplier(self, supplier_id, item_id, amount):
         supplier = self.get_supplier(supplier_id)
         if supplier:
-            item = self.get_inventory_item(item_id)
+            item = supplier.inventory.get(item_id)
             if item:
-                item.receive_stock(amount)
-                supplier.add_order(f"Order for {amount} units of {item._name}")
-                print(f"Ordered {amount} units of {item._name} from {supplier._name}")
+                total_cost = item.price * amount
+                self.deduct_balance(total_cost)
+                if item_id not in self._inventory:
+                    self._inventory[item_id] = InventoryItem(item_id, item.name, item.description, item.price)
+                self._inventory[item_id].receive_stock(amount)
+                supplier.add_order(f"Order for {amount} units of {item.name} at ${item.price} each")
+                print(f"Ordered {amount} units of {item.name} from {supplier.name} for ${total_cost:.2f}")
             else:
-                print("Item not found in inventory.")
+                print("Item not found in supplier's inventory.")
         else:
             print("Supplier not found.")
 
-    def get_inventory(self):
-        return self._inventory
-
     def place_customer_order(self, customer, item_id, amount):
-        item = self.get_inventory_item(item_id)
-        if item and item.get_stock_level() >= amount:
+        item = self._inventory.get(item_id)
+        if item and item.quantity >= amount:
+            total_cost = item.price * amount
             item.reduce_stock(amount)
+            customer.deduct_balance(total_cost)
             order = Order(customer, item, amount)
             customer.add_purchase(order)
-            print(f"Order placed for {amount} units of {item._name}")
+            print(f"Order placed for {amount} units of {item.name} at ${item.price} each. Total: ${total_cost:.2f}")
         else:
             print("Insufficient stock or item not found.")
-
-    def view_purchase_history(self, customer):
-        return customer.get_purchase_history()
 
 
 class Order:
@@ -158,6 +238,23 @@ class Order:
         self._status = "processing"
         self._timestamp = datetime.now()
 
+    @property
+    def customer(self):
+        return self._customer
+
+    @property
+    def item(self):
+        return self._item
+
+    @property
+    def amount(self):
+        return self._amount
+
+    @property
+    def status(self):
+        self.update_status()
+        return self._status
+
     def update_status(self):
         elapsed_time = datetime.now() - self._timestamp
         if elapsed_time > timedelta(minutes=3):
@@ -166,7 +263,3 @@ class Order:
             self._status = "dispatched"
         elif elapsed_time > timedelta(minutes=1):
             self._status = "processed"
-
-    def get_status(self):
-        self.update_status()
-        return self._status
