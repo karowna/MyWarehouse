@@ -12,6 +12,26 @@ def main_menu():
     supplier.add_inventory_item(item2)
     warehouse.add_supplier(supplier)
 
+    supplier2 = Supplier("MetalWorks", "0987654321", "sales@metalworks.com", "SUP002")
+    item3 = InventoryItem("ITM003", "Steel", "High-grade construction steel", 10.0)
+    item4 = InventoryItem("ITM004", "Iron", "Industrial iron rods", 8.0)
+    supplier2.add_inventory_item(item3)
+    supplier2.add_inventory_item(item4)
+    warehouse.add_supplier(supplier2)
+
+
+    # --- Preload Customers ---
+    customer1 = Customer("Amr", "0987654321", "amr@example.com", "C1")
+    customer2 = Customer("Bkar", "1231231234", "bkar@example.com", "C2")
+    warehouse.add_customer(customer1)
+    warehouse.add_customer(customer2)
+    
+    # --- Preload Warehouse Inventory ---
+    warehouse.inventory["ITM001"] = InventoryItem("ITM001", "Bricks", "Standard red bricks", 1.0, quantity=100, low_stock_threshold=10)
+    warehouse.inventory["ITM002"] = InventoryItem("ITM002", "Cement", "50kg bag of cement", 5.0, quantity=50, low_stock_threshold=5)
+    warehouse.inventory["ITM003"] = InventoryItem("ITM003", "Steel", "High-grade construction steel", 10.0, quantity=200, low_stock_threshold=20)
+    warehouse.inventory["ITM004"] = InventoryItem("ITM004", "Iron", "Industrial iron rods", 8.0, quantity=150, low_stock_threshold=15)
+
     while True:
         print("\n--- Main Menu ---")
         print("1. Customer Login")
@@ -64,6 +84,7 @@ def customer_login(warehouse):
 def customer_menu(warehouse, customer):
     while True:
         print("\n--- Customer Menu ---")
+        print(f"\n--- Name: ({customer.name} | ID: {customer.customer_id}) ---")
         print("1. View Inventory")
         print("2. Place Order")
         print("3. View Order History")
@@ -80,7 +101,7 @@ def customer_menu(warehouse, customer):
         elif choice == "0":
             break
         else:
-            print("Invalid choice. Try again.")
+            print("Invalid choice. Try again.") # Don't want this to be a return, as we want to stay in the customer menu
 
 def admin_login(warehouse):
     while True:
@@ -241,8 +262,8 @@ def order_from_supplier(warehouse):
             if item_id not in warehouse.inventory:
                 warehouse.inventory[item_id] = InventoryItem(item_id, item.name, item.description, item.price, low_stock_threshold)
             warehouse.inventory[item_id].receive_stock(amount)
-            supplier.add_order(f"Order for {amount} units of {item.name} at ${item.price} each")
-            print(f"Ordered {amount} units of {item.name} from {supplier.name} for ${total_cost:.2f}")
+            supplier.add_order(f"Order for {amount} units of {item.name} at £{item.price} each")
+            print(f"Ordered {amount} units of {item.name} from {supplier.name} for £{total_cost:.2f}")
         else:
             print("Item not found in supplier's inventory. Available items:")
             for sid, sitem in supplier.inventory.items():
@@ -252,9 +273,12 @@ def order_from_supplier(warehouse):
 
 def view_inventory(warehouse):
     print("\n--- Inventory ---")
-    for item_id, item in warehouse.inventory.items():
-        details = item.get_item_details()
-        print(f"Item ID: {details['Item ID']}, Name: {details['Name']}, Quantity: {details['Quantity']}, Low Stock Alert: {details['Low Stock Alert']}")
+    if not warehouse.inventory:
+        print("Tumbleweed... No items in inventory.")
+    else:
+        for item_id, item in warehouse.inventory.items():
+            details = item.get_item_details()
+            print(f"Item ID: {details['Item ID']}, Name: {details['Name']}, Quantity: {details['Quantity']}")
 
 def edit_inventory_prices(warehouse):
     item_id = input("Enter item ID to edit price: ")
@@ -262,43 +286,36 @@ def edit_inventory_prices(warehouse):
     if item:
         new_price = float(input(f"Enter new price for {item.name}: "))
         item.price = new_price
-        print(f"Price for {item.name} updated to ${new_price:.2f}")
+        print(f"Price for {item.name} updated to £{new_price:.2f}")
     else:
         print("Item not found in warehouse inventory.")
 
-def quick_financial_overview(warehouse):
-    total_spent = sum(item.price * item.quantity for item in warehouse.inventory.values())
-    total_sales = sum(order.item.price * order.amount for customer in warehouse.customers.values() for order in customer.purchase_history)
-    profit = total_sales - total_spent
+def place_order(warehouse, customer):
+    print("\n--- Place an Order ---")
+    item_id = input("Enter item ID: ")
+    try:
+        amount = int(input("Enter amount to order: "))
+        result = warehouse.place_customer_order(customer, item_id, amount)
+        print(result)
+    except ValueError:
+        print("Invalid input. Please enter a valid number for the amount.")
 
+
+def quick_financial_overview(warehouse):
+    overview = warehouse.quick_financial_overview()
     print("\n--- Quick Financial Overview ---")
-    print(f"Total Spent by Warehouse: ${total_spent:.2f}")
-    print(f"Total Sales to Customers: ${total_sales:.2f}")
-    print(f"Total Profit: ${profit:.2f}")
+    print(f"Total Spent by Warehouse: £{overview['Total Spent by Warehouse']:.2f}")
+    print(f"Total Sales to Customers: £{overview['Total Sales to Customers']:.2f}")
+    print(f"Total Profit: £{overview['Total Profit']:.2f}")
 
 def create_in_depth_financial_report(warehouse):
+    report = warehouse.create_in_depth_financial_report()
     print("\n--- In-Depth Financial Report ---")
-    print("Warehouse Transactions:")
-    for supplier in warehouse.suppliers.values():
-        for order in supplier.order_history:
-            print(order)
-
-    print("\nCustomer Transactions:")
-    for customer in warehouse.customers.values():
-        for order in customer.purchase_history:
-            print(f"Customer: {customer.name}, Item: {order.item.name}, Amount: {order.amount}, Price: ${order.item.price:.2f}, Status: {order.status}")
-
-def place_order(warehouse, customer):
-    item_id = input("Enter item ID: ")
-    amount = int(input("Enter amount to order: "))
-
-    warehouse.place_customer_order(customer, item_id, amount)
 
 def view_order_history(customer):
-    print("\n--- Order History ---")
-    for order in customer.purchase_history:
-        print(f"Item: {order.item.name}, Amount: {order.amount}, Status: {order.status}")
+    print("\n--- Purchase History ---")
+    print(customer.get_formatted_purchase_history())
+
 
 if __name__ == "__main__":
     main_menu()
-
