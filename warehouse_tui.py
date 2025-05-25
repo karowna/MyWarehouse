@@ -311,6 +311,7 @@ def quick_financial_overview(warehouse):
 def create_in_depth_financial_report(warehouse):
     report = warehouse.create_in_depth_financial_report()
     print("\n--- In-Depth Financial Report ---")
+    print(report)
 
 def view_order_history(customer):
     print("\n--- Purchase History ---")
