@@ -77,6 +77,10 @@ class Customer(Person):
     def add_purchase(self, purchase):
         self._purchase_history.append(purchase)
 
+    def get_formatted_purchase_history(self):
+        if not self._purchase_history:
+            return "No purchases found."
+        return "\n".join(f"{i+1}. {purchase}" for i, purchase in enumerate(self._purchase_history))
 
 class InventoryItem:
     """Represents an item in the inventory with stock management capabilities"""
@@ -121,17 +125,17 @@ class InventoryItem:
         """Add new stock to inventory"""
         if amount > 0:
             self._quantity += amount
-            print(f"Received {amount} units of '{self._name}'. New quantity: {self._quantity}")
+            return f"Received {amount} units of '{self._name}'. New quantity: {self._quantity}"
         else:
-            print("Invalid stock amount. Must be greater than 0.")
+            raise ValueError("Invalid stock amount. Must be greater than 0.")
 
     def reduce_stock(self, amount):
         """Reduce stock when items are sold or used"""
         if 0 < amount <= self._quantity:
             self._quantity -= amount
-            print(f"Reduced {amount} units of '{self._name}'. Remaining quantity: {self._quantity}")
+            return f"Reduced {amount} units of '{self._name}'. Remaining quantity: {self._quantity}"
         else:
-            print("Invalid reduction amount or insufficient stock.")
+            raise ValueError("Invalid reduction amount or insufficient stock.")
 
     def is_low_stock(self):
         """Check if stock is below the low stock threshold"""
@@ -209,12 +213,12 @@ class Warehouse:
                 if item_id not in self._inventory:
                     self._inventory[item_id] = InventoryItem(item_id, item.name, item.description, item.price)
                 self._inventory[item_id].receive_stock(amount)
-                supplier.add_order(f"Order for {amount} units of {item.name} at ${item.price} each")
-                print(f"Ordered {amount} units of {item.name} from {supplier.name} for ${total_cost:.2f}")
+                supplier.add_order(f"Order for {amount} units of {item.name} at £{item.price} each")
+                return f"Ordered {amount} units of {item.name} from {supplier.name} for £{total_cost:.2f}"
             else:
-                print("Item not found in supplier's inventory.")
+                return "Item not found in supplier's inventory."
         else:
-            print("Supplier not found.")
+            return "Supplier not found."
 
     def place_customer_order(self, customer, item_id, amount):
         item = self._inventory.get(item_id)
@@ -224,9 +228,42 @@ class Warehouse:
             customer.deduct_balance(total_cost)
             order = Order(customer, item, amount)
             customer.add_purchase(order)
-            print(f"Order placed for {amount} units of {item.name} at ${item.price} each. Total: ${total_cost:.2f}")
+            return f"Order placed for {amount} units of {item.name} at £{item.price} each. Total: £{total_cost:.2f}"
         else:
-            print("Insufficient stock or item not found.")
+            return "Insufficient stock or item not found."
+
+    def quick_financial_overview(self):
+        total_spent = sum(item.price * item.quantity for item in self._inventory.values())
+        total_sales = sum(order.item.price * order.amount for customer in self._customers.values() for order in customer.purchase_history)
+        profit = total_sales - total_spent
+
+        return {
+            "Total Spent by Warehouse": total_spent,
+            "Total Sales to Customers": total_sales,
+            "Total Profit": profit
+        }
+
+    def create_in_depth_financial_report(self):
+        report = {
+            "Warehouse Transactions": [],
+            "Customer Transactions": []
+        }
+
+        for supplier in self._suppliers.values():
+            for order in supplier.order_history:
+                report["Warehouse Transactions"].append(order)
+
+        for customer in self._customers.values():
+            for order in customer.purchase_history:
+                report["Customer Transactions"].append({
+                    "Customer": customer.name,
+                    "Item": order.item.name,
+                    "Amount": order.amount,
+                    "Price": order.item.price,
+                    "Status": order.status
+                })
+
+        return report
 
 
 class Order:
@@ -254,6 +291,14 @@ class Order:
     def status(self):
         self.update_status()
         return self._status
+    
+    def __str__(self):
+        return (
+            f"Item: {self._item.name}, "
+            f"Amount: {self._amount}, "
+            f"Status: {self.status}, "
+            f"Date: {self._timestamp.strftime('%Y-%m-%d %H:%M:%S')}"
+        )
 
     def update_status(self):
         elapsed_time = datetime.now() - self._timestamp
