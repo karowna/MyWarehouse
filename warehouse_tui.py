@@ -87,7 +87,7 @@ def admin_login(warehouse):
         print("\n--- Admin Menu ---")
         print("1. Manage Suppliers")
         print("2. Manage Warehouse Stock")
-        print("3. View List of Suppliers")
+        print("3. Financial Report")
         print("0. Back to Main Menu")
 
         choice = input("Choose an option: ")
@@ -97,7 +97,7 @@ def admin_login(warehouse):
         elif choice == "2":
             manage_warehouse_stock(warehouse)
         elif choice == "3":
-            view_list_of_suppliers(warehouse)
+            financial_report(warehouse)
         elif choice == "0":
             break
         else:
@@ -111,6 +111,7 @@ def manage_suppliers(warehouse):
         print("3. Delete Supplier")
         print("4. View Supplier Order History")
         print("5. Add Item to Supplier")
+        print("6. View List of Suppliers")
         print("0. Back to Admin Menu")
 
         choice = input("Choose an option: ")
@@ -125,6 +126,8 @@ def manage_suppliers(warehouse):
             view_supplier_order_history(warehouse)
         elif choice == "5":
             add_item_to_supplier(warehouse)
+        elif choice == "6":
+            view_list_of_suppliers(warehouse)
         elif choice == "0":
             break
         else:
@@ -135,6 +138,7 @@ def manage_warehouse_stock(warehouse):
         print("\n--- Manage Warehouse Stock ---")
         print("1. Order from Supplier")
         print("2. View Inventory")
+        print("3. Edit Inventory Prices")
         print("0. Back to Admin Menu")
 
         choice = input("Choose an option: ")
@@ -143,6 +147,26 @@ def manage_warehouse_stock(warehouse):
             order_from_supplier(warehouse)
         elif choice == "2":
             view_inventory(warehouse)
+        elif choice == "3":
+            edit_inventory_prices(warehouse)
+        elif choice == "0":
+            break
+        else:
+            print("Invalid choice. Try again.")
+
+def financial_report(warehouse):
+    while True:
+        print("\n--- Financial Report ---")
+        print("1. Quick Financial Overview")
+        print("2. Create In-Depth Financial Report")
+        print("0. Back to Admin Menu")
+
+        choice = input("Choose an option: ")
+
+        if choice == "1":
+            quick_financial_overview(warehouse)
+        elif choice == "2":
+            create_in_depth_financial_report(warehouse)
         elif choice == "0":
             break
         else:
@@ -182,6 +206,11 @@ def view_supplier_order_history(warehouse):
             print(order)
     else:
         print("Supplier not found.")
+
+def view_list_of_suppliers(warehouse):
+    print("\n--- List of Suppliers ---")
+    for supplier_id, supplier in warehouse.suppliers.items():
+        print(f"Supplier ID: {supplier_id}, Name: {supplier.name}, Contact Number: {supplier.contact_number}, Contact Email: {supplier.contact_email}")
 
 def add_item_to_supplier(warehouse):
     supplier_id = input("Enter supplier ID: ")
@@ -227,6 +256,38 @@ def view_inventory(warehouse):
         details = item.get_item_details()
         print(f"Item ID: {details['Item ID']}, Name: {details['Name']}, Quantity: {details['Quantity']}, Low Stock Alert: {details['Low Stock Alert']}")
 
+def edit_inventory_prices(warehouse):
+    item_id = input("Enter item ID to edit price: ")
+    item = warehouse.inventory.get(item_id)
+    if item:
+        new_price = float(input(f"Enter new price for {item.name}: "))
+        item.price = new_price
+        print(f"Price for {item.name} updated to ${new_price:.2f}")
+    else:
+        print("Item not found in warehouse inventory.")
+
+def quick_financial_overview(warehouse):
+    total_spent = sum(item.price * item.quantity for item in warehouse.inventory.values())
+    total_sales = sum(order.item.price * order.amount for customer in warehouse.customers.values() for order in customer.purchase_history)
+    profit = total_sales - total_spent
+
+    print("\n--- Quick Financial Overview ---")
+    print(f"Total Spent by Warehouse: ${total_spent:.2f}")
+    print(f"Total Sales to Customers: ${total_sales:.2f}")
+    print(f"Total Profit: ${profit:.2f}")
+
+def create_in_depth_financial_report(warehouse):
+    print("\n--- In-Depth Financial Report ---")
+    print("Warehouse Transactions:")
+    for supplier in warehouse.suppliers.values():
+        for order in supplier.order_history:
+            print(order)
+
+    print("\nCustomer Transactions:")
+    for customer in warehouse.customers.values():
+        for order in customer.purchase_history:
+            print(f"Customer: {customer.name}, Item: {order.item.name}, Amount: {order.amount}, Price: ${order.item.price:.2f}, Status: {order.status}")
+
 def place_order(warehouse, customer):
     item_id = input("Enter item ID: ")
     amount = int(input("Enter amount to order: "))
@@ -237,11 +298,6 @@ def view_order_history(customer):
     print("\n--- Order History ---")
     for order in customer.purchase_history:
         print(f"Item: {order.item.name}, Amount: {order.amount}, Status: {order.status}")
-
-def view_list_of_suppliers(warehouse):
-    print("\n--- List of Suppliers ---")
-    for supplier_id, supplier in warehouse.suppliers.items():
-        print(f"Supplier ID: {supplier_id}, Name: {supplier.name}, Contact Number: {supplier.contact_number}, Contact Email: {supplier.contact_email}")
 
 if __name__ == "__main__":
     main_menu()
