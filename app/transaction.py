@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 
+
 class Transaction:
     """Represents a transaction involving an item"""
 
@@ -10,7 +11,9 @@ class Transaction:
         self._party = party
         self._transaction_type = transaction_type
         self._timestamp = datetime.now()
-        self._status = status or ("delivered" if transaction_type == "restock" else "processing")
+        self._status = status or (
+            "delivered" if transaction_type == "restock" else "processing"
+        )
 
     @property
     def item(self):
@@ -44,7 +47,6 @@ class Transaction:
     def total_cost(self):
         return self._price * self._quantity
 
-
     def __str__(self):
         return (
             f"{self._transaction_type.capitalize()} by {self._party.name}: {self._item.name}, "
@@ -61,7 +63,7 @@ class Transaction:
                 self._status = "dispatched"
             elif elapsed_time > timedelta(minutes=1):
                 self._status = "processed"
-    
+
     def to_dict(self):
         return {
             "Item": self._item.name,
@@ -69,6 +71,5 @@ class Transaction:
             "Price": self._price,
             "Party": self._party.name,
             "Type": self._transaction_type,
-            "Timestamp": self._timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            "Timestamp": self._timestamp.strftime("%Y-%m-%d %H:%M:%S"),
         }
-

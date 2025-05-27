@@ -1,6 +1,7 @@
 from app.person import Person
 from app.transaction import Transaction
 
+
 class Customer(Person):
     """Represents a customer, inheriting from Person."""
 
@@ -31,7 +32,9 @@ class Customer(Person):
     def get_formatted_purchase_history(self):
         if not self._purchase_history:
             return "No purchases found."
-        return "\n".join(f"{i+1}. {purchase}" for i, purchase in enumerate(self._purchase_history))
+        return "\n".join(
+            f"{i+1}. {purchase}" for i, purchase in enumerate(self._purchase_history)
+        )
 
     def make_purchase(self, item, amount):
         total_cost = item.price * amount
