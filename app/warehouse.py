@@ -3,6 +3,7 @@ from app.transaction import Transaction
 from app.customer import Customer
 from app.supplier import Supplier
 
+
 class Warehouse:
     """Represents the warehouse that manages inventory and supplier interactions"""
 
@@ -36,7 +37,9 @@ class Warehouse:
 
     def update_supplier(self, supplier_id, contact_number, contact_email):
         if supplier_id in self._suppliers:
-            self._suppliers[supplier_id].set_contact_details(contact_number, contact_email)
+            self._suppliers[supplier_id].set_contact_details(
+                contact_number, contact_email
+            )
 
     def delete_supplier(self, supplier_id):
         if supplier_id in self._suppliers:
@@ -67,12 +70,13 @@ class Warehouse:
         self.deduct_balance(total_cost)
 
         if item_id not in self._inventory:
-            self._inventory[item_id] = Item(item_id, item.name, item.description, item.price)
+            self._inventory[item_id] = Item(
+                item_id, item.name, item.description, item.price
+            )
 
         self._inventory[item_id].receive_stock(amount)
 
         return f"Ordered {amount} units of {item.name} from {supplier.name} for £{total_cost:.2f}"
-
 
     def place_customer_order(self, customer, item_id, amount):
         item = self._inventory.get(item_id)
@@ -85,23 +89,25 @@ class Warehouse:
         transaction = customer.make_purchase(item, amount)
         return f"Order placed for {amount} units of {item.name} at £{item.price} each. Total: £{transaction.price * transaction.quantity:.2f}"
 
-
     def quick_financial_overview(self):
-        total_spent = sum(item.price * item.quantity for item in self._inventory.values())
-        total_sales = sum(order.price * order.quantity for customer in self._customers.values() for order in customer.purchase_history)
+        total_spent = sum(
+            item.price * item.quantity for item in self._inventory.values()
+        )
+        total_sales = sum(
+            order.price * order.quantity
+            for customer in self._customers.values()
+            for order in customer.purchase_history
+        )
         profit = total_sales - total_spent
 
         return {
             "Total Spent by Warehouse": total_spent,
             "Total Sales to Customers": total_sales,
-            "Total Profit": profit
+            "Total Profit": profit,
         }
 
     def create_in_depth_financial_report(self):
-        report = {
-            "Warehouse Transactions": [],
-            "Customer Transactions": []
-        }
+        report = {"Warehouse Transactions": [], "Customer Transactions": []}
 
         for supplier in self._suppliers.values():
             for order in supplier.order_history:

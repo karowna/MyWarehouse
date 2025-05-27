@@ -1,7 +1,9 @@
 class Item:
     """Represents an item in the inventory with stock management capabilities"""
 
-    def __init__(self, item_id, name, description, price, quantity=0, low_stock_threshold=None):
+    def __init__(
+        self, item_id, name, description, price, quantity=0, low_stock_threshold=None
+    ):
         self._item_id = item_id
         self._name = name
         self._description = description
@@ -68,5 +70,5 @@ class Item:
             "Price": self._price,
             "Quantity": self._quantity,
             "Low Stock Threshold": self._low_stock_threshold,
-            "Low Stock Alert": self.is_low_stock()
+            "Low Stock Alert": self.is_low_stock(),
         }

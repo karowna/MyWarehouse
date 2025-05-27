@@ -1,6 +1,7 @@
 from app.person import Person
 from app.transaction import Transaction
 
+
 class Supplier(Person):
     """Represents a supplier, inheriting from Person."""
 
